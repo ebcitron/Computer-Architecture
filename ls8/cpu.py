@@ -13,9 +13,9 @@ class CPU:
         #General Purpose Registers
         self.reg = [0] * 8 #General Registers
         self.reg[7] = 0xf4 #Register[7] set to 0xF4
-        self.memory = [0] * 256 #256 Bytes of RAM
+        self.ram = [0] * 256 #256 Bytes of RAM
         #Special Purpose Registers
-        self.IR = 0 #Instruction Register, contains a copy of the instruction currently being executed
+        #self.IR = 0 #Instruction Register, contains a copy of the instruction currently being executed
         self.PC = 0 #Program Counter, address of the currently executing instruction
         self.MAR = 0 #Memory Address Register, holds the memory address we're reading or writing
         self.MDR = 0 #Memory Data Register, holds the value to write or the value just read
@@ -23,15 +23,32 @@ class CPU:
 
         self.SP = 7
       
+        self.cmds = {
+          0b00000001: self.hlt,
+          0b10000010: self.ldi,
+          0b01000111: self.prn
+      }
         
         
     def ram_read(self, MAR):
-        return self.memory[MAR]
+        return self.ram[MAR]
 
     def ram_write(self, MAR, MDR):
-        self.memory[MAR] = MDR
+        self.ram[MAR] = MDR
 
-    def load(self):
+    def hlt(self, opp_a, opp_b):
+        return(0, False)
+
+    def ldi(self, opp_a, opp_b):
+        self.reg[opp_a] = opp_b
+        return (3, True)
+
+    def prn(self, opp_a, opp_b):
+        print(self.reg[opp_a])
+        return (2, True)
+
+
+    def load(self, program):
         """Load a program into memory."""
 
         address = 0
@@ -48,18 +65,18 @@ class CPU:
             0b00000001, # HLT
         ]
 
-        with open(sys.argv[1]) as f:
+        with open() as f:
             for line in f:
                 if line[0] != '#' and line != '\n':
-                    self.memory[address] = int(line[0:8], 2)
+                    self.ram[address] = int(line[0:8], 2)
                     address += 1
                 f.closed
-            print(self.memory)
+            print(self.ram)
 
             
 
         for instruction in program:
-            self.memory[address] = instruction
+            self.ram[address] = instruction
             address += 1
 
 
@@ -107,12 +124,24 @@ class CPU:
         """Run the CPU."""
         running = True
 
-        while self.running:
+        while running:
+            IR = self.ram_read(self.PC) #Set Instruction Register
+            print("IR: ", IR)
+
             opp_a = self.ram_read(self.PC + 1)
             opp_b = self.ram_read(self.PC + 2)
-            if self.memory[self.PC] == HLT:
-                self.running == False
-                break
+            
+            try:
+                operation = self.cmds[IR](opp_a, opp_b)
+                running = operation[1]
+                self.PC += operation
 
-            elif self.memory[self.PC] == ADD:
-                self.alu("ADD", opp_a)
+            except:
+                print(f"Error: IR {IR} not available")
+                sys.exit(1)
+            # if self.ram[self.PC] == HLT:
+            #     self.running == False
+            #     break
+
+            # elif self.ram[self.PC] == ADD:
+            #     self.alu("ADD", opp_a)

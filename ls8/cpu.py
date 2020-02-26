@@ -43,15 +43,15 @@ class CPU:
         return(0, False)
 
     def ldi(self, opp_a, opp_b):
-        print(f"ldi(self, opp_a, opp_b): ldi({self}, {opp_a}, {opp_b}")
+        print(f"ldi(self, opp_a, opp_b): ldi({self}, {opp_a}, {opp_b})")
         print("Virgin self.reg: ", self.reg)
         self.reg[opp_a] = opp_b
         print("Self.reg: ", self.reg)
         return (3, True)
 
     def prn(self, opp_a, opp_b):
-        print(f"prn({opp_a}, {opp_b}")
-        print(self.reg[opp_a])
+        print(f"prn(self, opp_a, opp_b): prn({opp_a}, {opp_b}")
+        print("Result: ", self.reg[opp_a])
         return (2, True)
 
 
@@ -168,7 +168,8 @@ class CPU:
             try:
                 op= self.cmds[IR](opp_a, opp_b)
                 running = op[1]
-                self.PC += op
+                print("Running: ",  running)
+                self.PC += op[0]
                 print("TRY self.pc: ", self.PC)
                 print("TRY operation: ", op)
 

@@ -169,6 +169,7 @@ there are other ways to code it that don't do these checks.
 
 Glossary:
 
+
 * **immediate**: takes a constant integer value as an argument
 * **register**: takes a register number as an argument
 

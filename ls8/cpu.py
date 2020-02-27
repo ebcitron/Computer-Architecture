@@ -1,6 +1,14 @@
 """CPU functionality."""
 
 import sys
+    
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
+     
 
 class CPU:
     """Main CPU class."""
@@ -19,12 +27,14 @@ class CPU:
         self.PC = 0 #Program Counter, address of the currently executing instruction
         self.MAR = 0 #Memory Address Register, holds the memory address we're reading or writing
         self.MDR = 0 #Memory Data Register, holds the value to write or the value just read
-        self.SP = 7
-      
-        self.cmds = {
-          0b00000001: self.hlt,
-          0b10000010: self.ldi,
-          0b01000111: self.prn
+        self.SP = 0xF4
+        self.branch_table = {
+          HLT: self.HLT,
+          PRN: self.PRN,
+          LDI: self.LDI,
+          MUL: self.MUL,
+          PUSH: self.PUSH,
+          POP: self.POP
       }
         
         
@@ -39,17 +49,38 @@ class CPU:
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
 
-    def hlt(self, opp_a, opp_b):
+
+    def PUSH(self, opp_a, opp_b):
+        regIndex = self.ram[self.PC + 1]
+        self.SP -= 1
+        val = self.reg[regIndex]
+        self.ram[self.SP] = val
+        return (2, True)
+
+    def POP(self, opp_a, opp_b):
+        popVal = self.ram[self.SP]
+        regIndex = self.ram[self.PC + 1]
+        self.reg[regIndex] = popVal
+        self.SP += 1
+        return (2, True)
+
+
+    def MUL(self, opp_a, opp_b):
+        self.alu("MUL", opp_a, opp_b)
+        return(3, True)
+
+
+    def HLT(self, opp_a, opp_b):
         return(0, False)
 
-    def ldi(self, opp_a, opp_b):
-        print(f"ldi(self, opp_a, opp_b): ldi({self}, {opp_a}, {opp_b})")
-        print("Virgin self.reg: ", self.reg)
+    def LDI(self, opp_a, opp_b):
+        #print(f"ldi(self, opp_a, opp_b): ldi({self}, {opp_a}, {opp_b})")
+        #print("Virgin self.reg: ", self.reg)
         self.reg[opp_a] = opp_b
-        print("Self.reg: ", self.reg)
+        #print("Self.reg: ", self.reg)
         return (3, True)
 
-    def prn(self, opp_a, opp_b):
+    def PRN(self, opp_a, opp_b):
         print(f"prn(self, opp_a, opp_b): prn({opp_a}, {opp_b}")
         print("Result: ", self.reg[opp_a])
         return (2, True)
@@ -112,7 +143,9 @@ class CPU:
         elif op == "DEC":
             self.reg[reg_a] -= 1
         elif op == "MUL":
-            self.reg[reg_a] *= self.reg[reg_b]
+            self.reg[reg_a] = (self.reg[reg_a] * self.reg[reg_b])
+            
+            
         elif op == "DIV":
             if self.reg[reg_b] == 0:
                 print("Error, Cannot divide by 0")
@@ -151,6 +184,13 @@ class CPU:
     def run(self):
         """Run the CPU."""
         running = True
+
+        # while True:
+        #     command = self.ram[self.PC]
+        #     opp_a = self.ram_read(self.PC + 1)
+        #     opp_b = self.ram_read(self.PC + 2)
+
+        #     self.branch_table[command](opp_a, opp_b)
         print("\n------------------------")
         print("run() \n")
         self.trace()
@@ -166,7 +206,7 @@ class CPU:
             opp_b = self.ram_read(self.PC + 2)
             
             try:
-                op= self.cmds[IR](opp_a, opp_b)
+                op = self.branch_table[IR](opp_a, opp_b)
                 running = op[1]
                 print("Running: ",  running)
                 self.PC += op[0]
